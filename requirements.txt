@@ -1,0 +1,27 @@
+# AutoForge依赖包
+
+# 核心依赖
+pdfplumber>=0.9.0       # PDF解析
+python-docx>=0.8.11     # Word文档解析
+pandas>=1.5.0           # Excel解析和数据处理
+openpyxl>=3.0.0         # Excel文件读写
+pillow>=9.0.0           # 图片处理
+pytesseract>=0.3.10     # OCR文字识别（可选）
+
+# LLM客户端（根据需要选择）
+openai>=1.0.0           # OpenAI API客户端
+
+# 工具库
+python-dotenv>=0.19.0   # 环境变量管理
+tqdm>=4.65.0            # 进度条
+colorlog>=6.7.0         # 彩色日志输出
+
+# 开发依赖（可选）
+pytest>=7.0.0           # 测试框架
+black>=22.0.0           # 代码格式化
+flake8>=4.0.0           # 代码检查
+
+# 爬虫依赖
+beautifulsoup4>=4.11.0  # HTML解析
+requests>=2.28.0        # HTTP请求
+pyyaml>=6.0             # YAML文件解析 

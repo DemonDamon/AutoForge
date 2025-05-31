@@ -1,0 +1,231 @@
+# HuggingFace 任务类型配置
+# 用于管理和查询不同的模型任务类型
+
+multimodal:
+  - name: "Audio-Text-to-Text"
+    tag: "audio-text-to-text"
+    description: "将音频和文本作为输入，生成文本输出"
+    
+  - name: "Image-Text-to-Text"
+    tag: "image-text-to-text"
+    description: "将图像和文本作为输入，生成文本输出"
+    
+  - name: "Visual Question Answering"
+    tag: "visual-question-answering"
+    description: "基于图像回答问题"
+    
+  - name: "Document Question Answering"
+    tag: "document-question-answering"
+    description: "基于文档回答问题"
+    
+  - name: "Video-Text-to-Text"
+    tag: "video-text-to-text"
+    description: "将视频和文本作为输入，生成文本输出"
+    
+  - name: "Visual Document Retrieval"
+    tag: "visual-document-retrieval"
+    description: "视觉文档检索"
+    
+  - name: "Any-to-Any"
+    tag: "any-to-any"
+    description: "任意模态到任意模态的转换"
+
+computer_vision:
+  - name: "Depth Estimation"
+    tag: "depth-estimation"
+    description: "深度估计"
+    
+  - name: "Image Classification"
+    tag: "image-classification"
+    description: "图像分类"
+    
+  - name: "Object Detection"
+    tag: "object-detection"
+    description: "目标检测"
+    
+  - name: "Image Segmentation"
+    tag: "image-segmentation"
+    description: "图像分割"
+    
+  - name: "Text-to-Image"
+    tag: "text-to-image"
+    description: "文本生成图像"
+    
+  - name: "Image-to-Text"
+    tag: "image-to-text"
+    description: "图像生成文本"
+    
+  - name: "Image-to-Image"
+    tag: "image-to-image"
+    description: "图像到图像转换"
+    
+  - name: "Image-to-Video"
+    tag: "image-to-video"
+    description: "图像生成视频"
+    
+  - name: "Unconditional Image Generation"
+    tag: "unconditional-image-generation"
+    description: "无条件图像生成"
+    
+  - name: "Video Classification"
+    tag: "video-classification"
+    description: "视频分类"
+    
+  - name: "Text-to-Video"
+    tag: "text-to-video"
+    description: "文本生成视频"
+    
+  - name: "Zero-Shot Image Classification"
+    tag: "zero-shot-image-classification"
+    description: "零样本图像分类"
+    
+  - name: "Mask Generation"
+    tag: "mask-generation"
+    description: "掩码生成"
+    
+  - name: "Zero-Shot Object Detection"
+    tag: "zero-shot-object-detection"
+    description: "零样本目标检测"
+    
+  - name: "Text-to-3D"
+    tag: "text-to-3d"
+    description: "文本生成3D模型"
+    
+  - name: "Image-to-3D"
+    tag: "image-to-3d"
+    description: "图像生成3D模型"
+    
+  - name: "Image Feature Extraction"
+    tag: "image-feature-extraction"
+    description: "图像特征提取"
+    
+  - name: "Keypoint Detection"
+    tag: "keypoint-detection"
+    description: "关键点检测"
+
+natural_language_processing:
+  - name: "Text Classification"
+    tag: "text-classification"
+    description: "文本分类"
+    
+  - name: "Token Classification"
+    tag: "token-classification"
+    description: "标记分类"
+    
+  - name: "Table Question Answering"
+    tag: "table-question-answering"
+    description: "表格问答"
+    
+  - name: "Question Answering"
+    tag: "question-answering"
+    description: "问答系统"
+    
+  - name: "Zero-Shot Classification"
+    tag: "zero-shot-classification"
+    description: "零样本分类"
+    
+  - name: "Translation"
+    tag: "translation"
+    description: "机器翻译"
+    
+  - name: "Summarization"
+    tag: "summarization"
+    description: "文本摘要"
+    
+  - name: "Feature Extraction"
+    tag: "feature-extraction"
+    description: "特征提取"
+    
+  - name: "Text Generation"
+    tag: "text-generation"
+    description: "文本生成"
+    
+  - name: "Text2Text Generation"
+    tag: "text2text-generation"
+    description: "文本到文本生成"
+    
+  - name: "Fill-Mask"
+    tag: "fill-mask"
+    description: "填充掩码"
+    
+  - name: "Sentence Similarity"
+    tag: "sentence-similarity"
+    description: "句子相似度"
+    
+  - name: "Text Ranking"
+    tag: "text-ranking"
+    description: "文本排序"
+
+audio:
+  - name: "Text-to-Speech"
+    tag: "text-to-speech"
+    description: "文本转语音"
+    
+  - name: "Text-to-Audio"
+    tag: "text-to-audio"
+    description: "文本转音频"
+    
+  - name: "Automatic Speech Recognition"
+    tag: "automatic-speech-recognition"
+    description: "自动语音识别"
+    
+  - name: "Audio-to-Audio"
+    tag: "audio-to-audio"
+    description: "音频到音频转换"
+    
+  - name: "Audio Classification"
+    tag: "audio-classification"
+    description: "音频分类"
+    
+  - name: "Voice Activity Detection"
+    tag: "voice-activity-detection"
+    description: "语音活动检测"
+
+tabular:
+  - name: "Tabular Classification"
+    tag: "tabular-classification"
+    description: "表格数据分类"
+    
+  - name: "Tabular Regression"
+    tag: "tabular-regression"
+    description: "表格数据回归"
+    
+  - name: "Time Series Forecasting"
+    tag: "time-series-forecasting"
+    description: "时间序列预测"
+
+reinforcement_learning:
+  - name: "Reinforcement Learning"
+    tag: "reinforcement-learning"
+    description: "强化学习"
+    
+  - name: "Robotics"
+    tag: "robotics"
+    description: "机器人学"
+
+other:
+  - name: "Graph Machine Learning"
+    tag: "graph-machine-learning"
+    description: "图机器学习"
+
+# 排序方式配置
+sort_options:
+  - name: "Trending"
+    value: "trending"
+    description: "热门趋势"
+    
+  - name: "Most likes"
+    value: "likes"
+    description: "最多点赞"
+    
+  - name: "Most downloads"
+    value: "downloads"
+    description: "最多下载"
+    
+  - name: "Recently created"
+    value: "created"
+    description: "最新创建"
+    
+  - name: "Recently updated"
+    value: "updated"
+    description: "最近更新" 
