@@ -1,3 +1,8 @@
+# 环境变量文件 - 包含敏感信息如API密钥
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
@@ -20,6 +25,24 @@ wheels/
 .installed.cfg
 *.egg
 
+# 日志文件
+*.log
+logs/
+
+# 输出目录
+outputs/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
 # Virtual environments
 .env
 .venv
@@ -29,20 +52,11 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
 # OS files
 .DS_Store
 Thumbs.db
 
 # AutoForge specific
-outputs/
-*.log
 config.py
 .autoforge_cache/
 workflow_state.json
