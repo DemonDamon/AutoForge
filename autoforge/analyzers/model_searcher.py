@@ -53,7 +53,8 @@ class ModelSearcher(BaseAnalyzer):
     def analyze(self, requirement_analysis: str, 
                 crawl_models: bool = True,
                 top_k: int = 10,
-                sort: str = "trending") -> Dict[str, Any]:
+                sort: str = "trending",
+                additional_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         执行模型搜索和推荐
         
@@ -62,6 +63,7 @@ class ModelSearcher(BaseAnalyzer):
             crawl_models: 是否爬取最新模型信息
             top_k: 爬取模型数量
             sort: 排序方式
+            additional_info: 额外的信息，包含业务层处理的模型数据和自定义提示
             
         Returns:
             模型推荐结果
@@ -73,20 +75,32 @@ class ModelSearcher(BaseAnalyzer):
         
         # 2. 如果启用爬虫且找到了任务类型，爬取相关模型
         crawled_models = None
-        if self.use_crawler and crawl_models and task_info:
+        if self.use_crawler and crawl_models and task_info and not additional_info:
             crawled_models = self._crawl_relevant_models(task_info, top_k, sort)
         
-        # 3. 准备增强的提示词（包含爬取的模型信息）
+        # 3. 使用额外提供的模型信息(如果有)
+        if additional_info and "crawled_models" in additional_info:
+            crawled_models = additional_info.get("crawled_models", [])
+            if crawled_models:
+                logger.info(f"使用业务层提供的模型信息，包含 {len(crawled_models)} 个模型")
+                
+                # 如果业务层提供了任务信息，则使用业务层的任务信息
+                if "task_info" in additional_info:
+                    task_info = additional_info["task_info"]
+                    logger.info(f"使用业务层提供的任务类型: {task_info.get('name', 'Unknown')}")
+        
+        # 4. 准备增强的提示词（包含爬取的模型信息）
         enhanced_prompt = self._prepare_enhanced_prompt(
             requirement_analysis, 
             task_info, 
-            crawled_models
+            crawled_models,
+            additional_info
         )
         
-        # 4. 调用LLM进行模型搜索和推荐
+        # 5. 调用LLM进行模型搜索和推荐
         search_result = self.call_llm(enhanced_prompt, temperature=0.3)
         
-        # 5. 保存搜索结果
+        # 6. 保存搜索结果
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         result_filename = f"model_search_{timestamp}.md"
         
@@ -177,7 +191,8 @@ class ModelSearcher(BaseAnalyzer):
     
     def _prepare_enhanced_prompt(self, requirement_analysis: str,
                                task_info: Optional[Dict[str, Any]],
-                               crawled_models: Optional[List[Dict[str, Any]]]) -> str:
+                               crawled_models: Optional[List[Dict[str, Any]]],
+                               additional_info: Optional[Dict[str, Any]] = None) -> str:
         """准备增强的提示词"""
         # 基础提示词
         base_prompt = self.prompt_manager.get_prompt(
@@ -185,12 +200,35 @@ class ModelSearcher(BaseAnalyzer):
             requirement_analysis=requirement_analysis
         )
         
+        # 如果有额外信息，直接添加到提示词中
+        enhanced_prompt = base_prompt
+        
+        # 添加自定义的任务信息（由业务层提供）
+        if additional_info and "custom_task_info" in additional_info:
+            enhanced_prompt += "\n" + additional_info["custom_task_info"]
+        
         # 如果有爬取的模型信息，添加到提示词中
         if crawled_models:
             models_info = "\n## 最新的HuggingFace模型信息\n\n"
-            models_info += f"以下是任务 '{task_info['name']}' 的最新热门模型：\n\n"
             
-            for i, model in enumerate(crawled_models[:10], 1):
+            # 获取模型的任务类型说明
+            task_name = "相关模型"
+            if task_info:
+                task_name = task_info.get('name', '相关模型')
+            
+            # 获取模型来源描述（由业务层提供）
+            model_source_desc = "相关模型"
+            if additional_info and "model_source_description" in additional_info:
+                model_source_desc = additional_info["model_source_description"]
+            
+            models_info += f"以下是{model_source_desc}的最新热门模型：\n\n"
+            
+            # 获取要显示的模型数量
+            max_models_to_show = 30  # 默认值
+            if additional_info and "display_model_count" in additional_info:
+                max_models_to_show = additional_info.get("display_model_count", 30)
+            
+            for i, model in enumerate(crawled_models[:max_models_to_show], 1):
                 models_info += f"{i}. **{model.get('model_id', 'Unknown')}**\n"
                 if model.get('name'):
                     models_info += f"   - 名称: {model['name']}\n"
@@ -204,13 +242,24 @@ class ModelSearcher(BaseAnalyzer):
                     models_info += f"   - 链接: {model['url']}\n"
                 models_info += "\n"
             
-            # 将模型信息插入到提示词中
-            enhanced_prompt = base_prompt + "\n" + models_info
-            enhanced_prompt += "\n请在推荐模型时，优先考虑上述最新的热门模型（如果它们符合需求）。\n"
+            # 添加自定义的模型选择指导（由业务层提供）
+            if additional_info and "model_selection_guide" in additional_info:
+                models_info += "\n" + additional_info["model_selection_guide"]
             
-            return enhanced_prompt
+            enhanced_prompt += "\n" + models_info
+            enhanced_prompt += "\n请在推荐模型时，优先考虑上述最新的热门模型（如果它们符合需求）。\n"
         
-        return base_prompt
+        # 添加自定义的注意事项（由业务层提供）
+        if additional_info and "custom_notes" in additional_info:
+            enhanced_prompt += "\n" + additional_info["custom_notes"]
+        else:
+            # 默认注意事项
+            enhanced_prompt += "\n## 注意事项\n\n"
+            enhanced_prompt += "1. 请准确评估模型大小和资源需求。\n"
+            enhanced_prompt += "2. 请确保推荐的模型与任务类型匹配。\n"
+            enhanced_prompt += "3. 请考虑模型的语言支持能力。\n"
+        
+        return enhanced_prompt
     
     def get_available_tasks(self) -> str:
         """获取所有可用的任务类型"""
