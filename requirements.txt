@@ -7,6 +7,10 @@ pandas>=1.5.0           # Excel解析和数据处理
 openpyxl>=3.0.0         # Excel文件读写
 pillow>=9.0.0           # 图片处理
 pytesseract>=0.3.10     # OCR文字识别（可选）
+python-dotenv>=1.0.0
+loguru>=0.7.0
+httpx>=0.25.0
+pyyaml>=6.0
 
 # LLM客户端（根据需要选择）
 openai>=1.0.0           # OpenAI API客户端
@@ -24,4 +28,5 @@ flake8>=4.0.0           # 代码检查
 # 爬虫依赖
 beautifulsoup4>=4.11.0  # HTML解析
 requests>=2.28.0        # HTTP请求
-pyyaml>=6.0             # YAML文件解析 
+pyyaml>=6.0             # YAML文件解析
+markdown>=3.5.0         # Markdown解析 
