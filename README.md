@@ -19,21 +19,21 @@ AutoForge/
 │   ├── analyzers/         # 分析器组件
 │   ├── docparser/         # 文档解析器
 │   ├── llm/              # LLM客户端
+│   │   ├── openai_client.py  # OpenAI客户端
+│   │   ├── deepseek_client.py  # DeepSeek客户端
+│   │   ├── bailian_client.py   # 百炼客户端
+│   │   └── base.py            # 基类
+│   ├── crawler/          # 爬虫模块
 │   └── prompts/          # 提示词管理
 ├── examples/              # 使用示例
-│   └── quick_start.py
+│   ├── quick_start.py     # 快速入门示例
+│   ├── multi_llm_example.py  # 多LLM提供商示例
+│   ├── crawler_demo.py    # 爬虫功能示例
+│   └── mydemo.py         # 视频标题规范化示例
 ├── outputs/               # 输出目录（自动创建）
 ├── requirements.txt       # 项目依赖
 ├── setup.py              # 安装配置
 ├── config.example.py     # 配置示例
-├── test_basic.py         # 基础测试
-├── crawler/              # 爬虫模块
-│   ├── __init__.py       # 模块初始化
-│   ├── hf_crawler.py     # HuggingFace爬虫主类
-│   ├── parsers.py        # HTML页面解析器
-│   └── task_manager.py   # 任务类型管理器
-├── data/
-│   └── hf_tasks.yaml     # HuggingFace任务类型配置（50+任务）
 └── README.md             # 详细文档
 ```
 
@@ -52,29 +52,41 @@ pip install -r requirements.txt
 
 ### 2. 配置LLM
 
-AutoForge需要一个大语言模型来执行分析任务。目前支持OpenAI API：
+AutoForge支持多种LLM提供商，包括OpenAI、DeepSeek和阿里云百炼：
 
 ```bash
-# 设置API密钥
-export OPENAI_API_KEY="your-api-key-here"
+# OpenAI（默认）
+export OPENAI_API_KEY="your-openai-api-key-here"
+
+# DeepSeek（可选）
+export DEEPSEEK_API_KEY="your-deepseek-api-key-here"
+
+# 阿里云百炼（可选）
+export DASHSCOPE_API_KEY="your-dashscope-api-key-here"
 ```
 
-### 3. 运行示例
+### 3. 示例程序
 
-```python
-from autoforge import AutoForgeAgent
-from autoforge.llm import OpenAIClient
+AutoForge提供了几个示例程序，用于快速上手：
 
-# 初始化LLM客户端
-llm_client = OpenAIClient(model="gpt-4")
+- **quick_start.py** - 基础入门示例
+- **multi_llm_example.py** - 展示如何使用不同的LLM提供商
+- **crawler_demo.py** - 展示HuggingFace爬虫功能
+- **mydemo.py** - 视频标题规范化实际应用示例
 
-# 创建Agent
-agent = AutoForgeAgent(llm_client=llm_client)
+运行示例：
+```bash
+# 快速入门示例
+python examples/quick_start.py
 
-# 运行完整流程
-result = agent.run_full_pipeline(
-    manual_description="我需要一个中文文本分类模型..."
-)
+# 多LLM提供商示例
+python examples/multi_llm_example.py
+
+# 爬虫功能示例
+python examples/crawler_demo.py
+
+# 视频标题清洗算法任务示例
+python examples/mydemo.py
 ```
 
 ## 📚 详细使用指南
@@ -142,7 +154,69 @@ outputs/
 └── autoforge_final_report.md # 汇总报告
 ```
 
-### 4. HuggingFace爬虫使用 🆕
+### 4. 多种LLM提供商支持 🆕
+
+AutoForge现在支持多种LLM提供商，可以根据需要选择使用：
+
+#### a) OpenAI（默认）
+```python
+from autoforge.llm import OpenAIClient
+
+# 初始化OpenAI客户端
+openai_client = OpenAIClient(
+    api_key="your-api-key-here",  # 或从环境变量OPENAI_API_KEY读取
+    model="gpt-4",
+    base_url=None  # 默认使用官方API端点
+)
+
+# 创建Agent
+agent = AutoForgeAgent(llm_client=openai_client)
+```
+
+#### b) DeepSeek
+```python
+from autoforge.llm import DeepSeekClient
+
+# 初始化DeepSeek客户端
+deepseek_client = DeepSeekClient(
+    api_key="your-api-key-here",  # 或从环境变量DEEPSEEK_API_KEY读取
+    model="deepseek-chat",  # 或使用 "deepseek-reasoner"
+    base_url="https://api.deepseek.com"
+)
+
+# 创建Agent
+agent = AutoForgeAgent(llm_client=deepseek_client)
+```
+
+#### c) 阿里云百炼
+```python
+from autoforge.llm import BaiLianClient
+
+# 初始化百炼客户端
+bailian_client = BaiLianClient(
+    api_key="your-api-key-here",  # 或从环境变量DASHSCOPE_API_KEY读取
+    model="qwen-plus",  # 百炼支持的模型，如qwen-plus
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+)
+
+# 创建Agent
+agent = AutoForgeAgent(llm_client=bailian_client)
+```
+
+#### d) 使用配置文件
+```python
+# 从config.custom.py加载配置
+agent = AutoForgeAgent(
+    llm_config={
+        "provider": "deepseek",  # 或 "openai"、"bailian"
+        "api_key": "your-api-key-here",
+        "model": "deepseek-chat",
+        "base_url": "https://api.deepseek.com"
+    }
+)
+```
+
+### 5. HuggingFace爬虫使用
 
 ```python
 from autoforge.crawler import HuggingFaceCrawler
@@ -174,7 +248,7 @@ detailed_models = crawler.crawl_models_batch(
 )
 ```
 
-### 5. 集成爬虫的模型搜索
+### 6. 集成爬虫的模型搜索
 
 ```python
 # ModelSearcher会自动使用爬虫获取最新模型信息
@@ -210,6 +284,10 @@ class MyLLMClient(BaseLLMClient):
     def generate(self, prompt, **kwargs):
         # 实现你的生成逻辑
         pass
+        
+    def generate_with_messages(self, messages, **kwargs):
+        # 实现消息格式的生成逻辑
+        pass
 ```
 
 ### 3. 文档解析器配置
@@ -242,7 +320,13 @@ parser = MultiModalDocParser(
 - 支持自定义提示词
 - 变量动态替换
 
-### 4. HuggingFace爬虫 (Crawler) 🆕
+### 4. LLM客户端 (LLMClients) 🆕
+- **OpenAIClient**: 支持OpenAI API（如GPT-3.5、GPT-4）
+- **DeepSeekClient**: 支持DeepSeek API（如deepseek-chat、deepseek-reasoner）
+- **BaiLianClient**: 支持阿里云百炼API（如通义千问系列模型）
+- **工厂模式**: 可通过配置文件轻松切换不同提供商
+
+### 5. HuggingFace爬虫 (Crawler)
 - **自动爬取模型信息**: 根据任务类型爬取TopK个模型
 - **多种排序方式**: trending/downloads/likes/created/updated
 - **ModelCard提取**: 自动爬取并保存模型详细文档
@@ -253,16 +337,53 @@ parser = MultiModalDocParser(
 
 ### 环境变量
 ```bash
+# OpenAI
 OPENAI_API_KEY      # OpenAI API密钥
 OPENAI_BASE_URL     # 自定义API端点（可选）
+
+# DeepSeek
+DEEPSEEK_API_KEY    # DeepSeek API密钥
+
+# 阿里云百炼
+DASHSCOPE_API_KEY   # 百炼 API密钥
+```
+
+### 配置方式
+您可以通过以下方式配置AutoForge：
+
+1. **环境变量**：如上所示设置环境变量
+2. **直接提供**：在代码中直接提供API密钥和配置参数
+3. **示例代码**：参考examples/mydemo.py中的配置方式
+
+示例配置（来自mydemo.py）：
+```python
+# 模型配置映射
+MODEL_CONFIGS = {
+    "deepseek-reasoner": {
+        "provider": "DeepSeek",
+        "api_key": os.getenv("DEEPSEEK_API_KEY", ""),
+        "model_name": "deepseek-reasoner",
+        "client_class": "DeepSeekClient"
+    },
+    "qwen-plus": {
+        "provider": "阿里云百炼",
+        "api_key": os.getenv("BAILIAN_API_KEY", ""),
+        "model_name": "qwen-plus", 
+        "client_class": "BaiLianClient"
+    }
+}
+
+# 选择要使用的模型
+SELECTED_MODEL = "deepseek-reasoner"  # 可选: "deepseek-reasoner", "qwen-plus"
 ```
 
 ### Agent配置
 ```python
 agent = AutoForgeAgent(
-    llm_client=llm_client,
-    output_dir="outputs",           # 输出目录
-    custom_prompts_dir=None,        # 自定义提示词目录
+    llm_client=llm_client,  # 直接提供LLM客户端
+    llm_config=llm_config,  # 或通过配置创建客户端
+    output_dir="outputs",   # 输出目录
+    custom_prompts_dir=None # 自定义提示词目录
 )
 ```
 
@@ -311,6 +432,8 @@ agent = AutoForgeAgent(
 
 - HuggingFace 社区
 - OpenAI
+- DeepSeek
+- 阿里云百炼
 - 所有贡献者
 
 ---
