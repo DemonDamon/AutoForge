@@ -16,6 +16,7 @@ from .analyzers import (
 )
 from .prompts import PromptManager
 from .docparser import MultiModalDocParser
+from .llm import BaseLLMClient, OpenAIClient, DeepSeekClient, BaiLianClient
 
 logger = logging.getLogger(__name__)
 
@@ -25,50 +26,57 @@ class AutoForgeAgent:
     
     def __init__(self,
                  llm_client=None,
+                 llm_config: Optional[Dict[str, Any]] = None,
                  output_dir: str = "outputs",
                  custom_prompts_dir: Optional[str] = None):
         """
         初始化AutoForge Agent
         
         Args:
-            llm_client: 大语言模型客户端
+            llm_client: 大语言模型客户端（如果提供，则优先使用）
+            llm_config: LLM配置（如果未提供llm_client，则使用此配置创建客户端）
             output_dir: 输出目录
             custom_prompts_dir: 自定义提示词目录
         """
-        self.llm_client = llm_client
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 创建LLM客户端
+        if llm_client is None and llm_config is not None:
+            self.llm_client = self._create_llm_client(llm_config)
+        else:
+            self.llm_client = llm_client
         
         # 初始化提示词管理器
         self.prompt_manager = PromptManager(custom_prompts_dir)
         
         # 初始化各个分析器
         self.requirement_analyzer = RequirementAnalyzer(
-            llm_client=llm_client,
+            llm_client=self.llm_client,
             output_dir=output_dir,
             prompt_manager=self.prompt_manager
         )
         
         self.model_searcher = ModelSearcher(
-            llm_client=llm_client,
+            llm_client=self.llm_client,
             output_dir=output_dir,
             prompt_manager=self.prompt_manager
         )
         
         self.dataset_designer = DatasetDesigner(
-            llm_client=llm_client,
+            llm_client=self.llm_client,
             output_dir=output_dir,
             prompt_manager=self.prompt_manager
         )
         
         self.experiment_designer = ExperimentDesigner(
-            llm_client=llm_client,
+            llm_client=self.llm_client,
             output_dir=output_dir,
             prompt_manager=self.prompt_manager
         )
         
         self.result_analyzer = ResultAnalyzer(
-            llm_client=llm_client,
+            llm_client=self.llm_client,
             output_dir=output_dir,
             prompt_manager=self.prompt_manager
         )
@@ -81,6 +89,48 @@ class AutoForgeAgent:
             "experiment_design": None,
             "final_analysis": None
         }
+    
+    def _create_llm_client(self, config: Dict[str, Any]) -> BaseLLMClient:
+        """
+        根据配置创建LLM客户端
+        
+        Args:
+            config: LLM配置
+            
+        Returns:
+            LLM客户端
+        """
+        provider = config.get("provider", "openai").lower()
+        
+        # 提取常用配置
+        api_key = config.get("api_key")
+        base_url = config.get("base_url")
+        model = config.get("model")
+        organization = config.get("organization")
+        
+        if provider == "openai":
+            return OpenAIClient(
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                organization=organization
+            )
+        elif provider == "deepseek":
+            return DeepSeekClient(
+                api_key=api_key,
+                base_url=base_url or "https://api.deepseek.com",
+                model=model or "deepseek-chat",
+                organization=organization
+            )
+        elif provider == "bailian":
+            return BaiLianClient(
+                api_key=api_key,
+                base_url=base_url or "https://dashscope.aliyuncs.com/compatible-mode/v1",
+                model=model or "qwen-plus",
+                organization=organization
+            )
+        else:
+            raise ValueError(f"不支持的LLM提供商: {provider}")
     
     def analyze_requirements(self,
                            document_path: Optional[str] = None,
@@ -108,12 +158,13 @@ class AutoForgeAgent:
         self.workflow_state["requirement_analysis"] = result
         return result
     
-    def search_models(self, requirement_analysis: Optional[str] = None) -> Dict[str, Any]:
+    def search_models(self, requirement_analysis: Optional[str] = None, additional_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         步骤2: 搜索模型
         
         Args:
             requirement_analysis: 需求分析结果（可选，默认使用上一步结果）
+            additional_info: 额外的信息，如手动爬取的模型数据
             
         Returns:
             模型搜索结果
@@ -125,7 +176,10 @@ class AutoForgeAgent:
                 raise ValueError("请先执行需求分析")
             requirement_analysis = self.workflow_state["requirement_analysis"]["analysis"]
         
-        result = self.model_searcher.analyze(requirement_analysis)
+        result = self.model_searcher.analyze(
+            requirement_analysis=requirement_analysis,
+            additional_info=additional_info
+        )
         
         self.workflow_state["model_search"] = result
         return result
