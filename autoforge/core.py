@@ -268,7 +268,8 @@ class AutoForgeAgent:
                          document_path: Optional[str] = None,
                          document_content: Optional[str] = None,
                          manual_description: Optional[str] = None,
-                         skip_experiment_execution: bool = True) -> Dict[str, Any]:
+                         skip_experiment_execution: bool = True,
+                         additional_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         运行完整的分析流程
         
@@ -277,6 +278,7 @@ class AutoForgeAgent:
             document_content: 文档内容
             manual_description: 手动描述
             skip_experiment_execution: 是否跳过实验执行（仅生成方案）
+            additional_info: 额外的信息，如模型搜索配置等
             
         Returns:
             完整的分析结果
@@ -287,7 +289,7 @@ class AutoForgeAgent:
         self.analyze_requirements(document_path, document_content, manual_description)
         
         # 2. 模型搜索
-        self.search_models()
+        self.search_models(additional_info=additional_info)
         
         # 3.1 数据集设计
         self.design_dataset()

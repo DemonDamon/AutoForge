@@ -522,3 +522,111 @@ result = agent.search_models()  # 自动爬取相关模型
 4. 定期更新任务类型配置文件
 
 爬虫模块现已完全集成到AutoForge项目中，可以自动获取HuggingFace最新的模型信息，提升模型推荐的准确性和时效性！
+
+## 功能特性
+
+- 🤖 **智能需求分析**: 自动解析文档和需求描述
+- 🔍 **模型搜索推荐**: 基于HuggingFace的智能模型推荐
+- 📊 **数据集设计**: 自动化数据集构建方案设计
+- 🧪 **实验设计**: 网格化超参数实验设计
+- 📈 **结果分析**: 智能化实验结果分析和建议
+- 🖼️ **多模态支持**: 支持图片、文档等多种格式的内容理解
+- 🌐 **多LLM支持**: 支持OpenAI、DeepSeek、阿里云百炼等多种大模型
+
+## 多模态功能
+
+AutoForge支持使用通义千问多模态模型（qwen-vl-plus/qwen-vl-max）进行图片内容理解：
+
+### 支持的图片格式
+- JPG/JPEG
+- PNG  
+- BMP
+- GIF
+- TIFF
+
+### 图片分析能力
+- 📝 **文字提取**: 识别图片中的所有文字内容
+- 📊 **图表理解**: 分析图表、表格的结构和数据
+- 🔄 **流程图解析**: 理解流程图、架构图的逻辑关系
+- 🎯 **关键信息提取**: 提取图片中的重要信息和细节
+
+### 使用示例
+
+```python
+from autoforge.llm import BaiLianClient
+
+# 初始化多模态客户端
+client = BaiLianClient(model="qwen-vl-plus")
+
+# 分析单张图片
+result = client.analyze_image(
+    image_path="path/to/image.jpg",
+    prompt="请详细分析这张图片的内容"
+)
+
+# 批量分析图片
+results = client.analyze_images_batch(
+    image_paths=["img1.jpg", "img2.png"],
+    prompt="请描述图片内容"
+)
+```
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 配置环境变量
+
+创建 `.env` 文件：
+
+```bash
+# 阿里云百炼API密钥（支持多模态）
+DASHSCOPE_API_KEY=your_dashscope_api_key
+
+# 或者使用其他模型
+DEEPSEEK_API_KEY=your_deepseek_api_key
+OPENAI_API_KEY=your_openai_api_key
+```
+
+### 3. 运行示例
+
+```bash
+# 基础功能测试
+python examples/quick_start.py
+
+# 多模态功能测试
+python examples/test_multimodal.py
+```
+
+## 项目结构
+
+```
+autoforge/
+├── llm/                    # LLM客户端
+│   ├── bailian_client.py   # 百炼客户端（支持多模态）
+│   ├── deepseek_client.py  # DeepSeek客户端
+│   └── openai_client.py    # OpenAI客户端
+├── docparser/              # 文档解析器
+│   ├── parser.py           # 多模态文档解析器
+│   └── converters.py       # 格式转换器
+├── analyzers/              # 分析器模块
+├── crawler/                # HuggingFace爬虫
+└── prompts/                # 提示词模板
+```
+
+## 使用场景
+
+1. **文档理解**: 自动解析包含图片的技术文档、需求文档
+2. **图表分析**: 理解业务图表、数据可视化图片
+3. **流程梳理**: 分析流程图、架构图等技术图表
+4. **多模态需求分析**: 结合文字和图片进行综合需求理解
+
+## 注意事项
+
+- 多模态功能需要配置阿里云百炼API密钥
+- 图片分析功能会消耗相应的API调用次数
+- 建议图片大小控制在合理范围内以提高处理效率

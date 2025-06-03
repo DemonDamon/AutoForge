@@ -233,9 +233,9 @@ class ExcelConverter(BaseConverter):
 class ImageConverter(BaseConverter):
     """图片转换器（使用OCR或多模态模型）"""
     
-    def __init__(self, use_multimodal: bool = True, multimodal_api_key: Optional[str] = None):
+    def __init__(self, use_multimodal: bool = True, multimodal_client=None):
         self.use_multimodal = use_multimodal
-        self.multimodal_api_key = multimodal_api_key
+        self.multimodal_client = multimodal_client
         
         if not use_multimodal and (Image is None or pytesseract is None):
             raise ImportError("请安装PIL和pytesseract: pip install pillow pytesseract")
@@ -248,7 +248,7 @@ class ImageConverter(BaseConverter):
         markdown_content = [f"# 图片: {os.path.basename(file_path)}\n"]
         
         try:
-            if self.use_multimodal:
+            if self.use_multimodal and self.multimodal_client:
                 # 使用多模态大模型
                 description = self._analyze_with_multimodal(file_path)
                 markdown_content.append(description)
@@ -263,20 +263,86 @@ class ImageConverter(BaseConverter):
         
         except Exception as e:
             logger.error(f"图片解析错误: {e}")
-            raise
+            # 如果多模态分析失败，尝试OCR作为备选方案
+            if self.use_multimodal:
+                logger.info("多模态分析失败，尝试使用OCR作为备选方案")
+                try:
+                    text = self._extract_text_with_ocr(file_path)
+                    if text:
+                        markdown_content.append("## OCR提取的文本\n")
+                        markdown_content.append(text)
+                    else:
+                        markdown_content.append("*未能从图片中提取到文本*")
+                except Exception as ocr_e:
+                    logger.error(f"OCR备选方案也失败: {ocr_e}")
+                    markdown_content.append(f"*图片分析失败: {str(e)}*")
+            else:
+                raise
         
         return "\n".join(markdown_content)
     
     def _extract_text_with_ocr(self, file_path: str) -> str:
         """使用OCR提取文本"""
-        image = Image.open(file_path)
-        text = pytesseract.image_to_string(image, lang='chi_sim+eng')
-        return text.strip()
+        if Image is None or pytesseract is None:
+            return ""
+        
+        try:
+            image = Image.open(file_path)
+            text = pytesseract.image_to_string(image, lang='chi_sim+eng')
+            return text.strip()
+        except Exception as e:
+            logger.error(f"OCR提取失败: {e}")
+            return ""
     
     def _analyze_with_multimodal(self, file_path: str) -> str:
         """使用多模态模型分析图片"""
-        # 这里需要集成具体的多模态模型API
-        # 暂时返回占位符
+        if not self.multimodal_client:
+            return self._get_placeholder_content(file_path)
+        
+        try:
+            # 检查客户端是否有analyze_image方法
+            if not hasattr(self.multimodal_client, 'analyze_image'):
+                logger.warning("多模态客户端不支持图片分析，使用占位符内容")
+                return self._get_placeholder_content(file_path)
+            
+            # 使用专门的图片分析提示词
+            prompt = """请详细分析这张图片的内容，包括：
+1. 图片的整体描述和主要内容
+2. 如果有文字，请提取所有可见的文字内容
+3. 如果有图表、表格或数据，请描述其结构和关键信息
+4. 如果有流程图、架构图等，请描述其逻辑关系
+5. 其他重要的视觉元素和信息
+
+请以结构化的方式组织输出，便于后续处理。"""
+            
+            # 调用多模态模型分析图片
+            analysis_result = self.multimodal_client.analyze_image(
+                image_path=file_path,
+                prompt=prompt,
+                temperature=0.3
+            )
+            
+            # 格式化输出
+            formatted_result = f"""## 多模态模型分析结果
+
+![{os.path.basename(file_path)}]({file_path})
+
+### 图片内容分析
+
+{analysis_result}
+
+---
+*分析模型: {getattr(self.multimodal_client, 'model', 'qwen-vl-plus')}*
+"""
+            
+            return formatted_result
+            
+        except Exception as e:
+            logger.error(f"多模态模型分析失败: {e}")
+            raise
+    
+    def _get_placeholder_content(self, file_path: str) -> str:
+        """获取占位符内容"""
         return f"""## 图片分析
 
 ![{os.path.basename(file_path)}]({file_path})

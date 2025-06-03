@@ -6,6 +6,8 @@
 import os
 from loguru import logger
 from typing import Optional, Dict, Any, List, Union, Iterator
+import base64
+from pathlib import Path
 
 from .base import BaseLLMClient
 
@@ -20,6 +22,11 @@ try:
 except ImportError:
     openai = None
 
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
 
 class BaiLianClient(BaseLLMClient):
     """阿里云百炼（通义千问）API客户端"""
@@ -29,6 +36,9 @@ class BaiLianClient(BaseLLMClient):
     
     # 只支持流式输出的模型
     STREAM_ONLY_MODELS = ["qwq", "qvq"]
+    
+    # 多模态模型
+    MULTIMODAL_MODELS = ["qwen-vl-plus", "qwen-vl-max"]
     
     def __init__(self,
                  api_key: Optional[str] = None,
@@ -70,6 +80,131 @@ class BaiLianClient(BaseLLMClient):
         """检查是否是只支持流式输出的模型"""
         model = model or self.model
         return any(stream_model in model.lower() for stream_model in self.STREAM_ONLY_MODELS)
+    
+    def _is_multimodal_model(self, model: Optional[str] = None) -> bool:
+        """检查是否是多模态模型"""
+        model = model or self.model
+        return any(mm_model in model.lower() for mm_model in self.MULTIMODAL_MODELS)
+    
+    def _encode_image_to_base64(self, image_path: str) -> str:
+        """将图片编码为base64格式"""
+        try:
+            with open(image_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                return encoded_string
+        except Exception as e:
+            logger.error(f"图片编码失败: {e}")
+            raise
+    
+    def _get_image_mime_type(self, image_path: str) -> str:
+        """获取图片的MIME类型"""
+        suffix = Path(image_path).suffix.lower()
+        mime_types = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.bmp': 'image/bmp',
+            '.webp': 'image/webp'
+        }
+        return mime_types.get(suffix, 'image/jpeg')
+    
+    def analyze_image(self, 
+                     image_path: str, 
+                     prompt: str = "请详细描述这张图片的内容，包括文字、图表、关键信息等。",
+                     model: Optional[str] = None,
+                     **kwargs) -> str:
+        """
+        分析图片内容
+        
+        Args:
+            image_path: 图片文件路径
+            prompt: 分析提示词
+            model: 使用的模型（默认使用qwen-vl-plus）
+            **kwargs: 其他参数
+            
+        Returns:
+            图片分析结果
+        """
+        # 检查图片文件是否存在
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"图片文件不存在: {image_path}")
+        
+        # 使用多模态模型
+        if model is None:
+            model = "qwen-vl-plus"
+        
+        if not self._is_multimodal_model(model):
+            logger.warning(f"模型 {model} 不是多模态模型，自动切换为 qwen-vl-plus")
+            model = "qwen-vl-plus"
+        
+        try:
+            # 编码图片
+            base64_image = self._encode_image_to_base64(image_path)
+            mime_type = self._get_image_mime_type(image_path)
+            
+            # 构建消息
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ]
+            
+            # 调用API
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                **kwargs
+            )
+            
+            content = response.choices[0].message.content
+            logger.info(f"[图片分析完成] 文件: {image_path}, 模型: {model}")
+            
+            return content
+            
+        except Exception as e:
+            logger.error(f"图片分析失败: {e}")
+            raise
+    
+    def analyze_images_batch(self,
+                           image_paths: List[str],
+                           prompt: str = "请详细描述这些图片的内容，包括文字、图表、关键信息等。",
+                           model: Optional[str] = None,
+                           **kwargs) -> List[str]:
+        """
+        批量分析多张图片
+        
+        Args:
+            image_paths: 图片文件路径列表
+            prompt: 分析提示词
+            model: 使用的模型
+            **kwargs: 其他参数
+            
+        Returns:
+            图片分析结果列表
+        """
+        results = []
+        for image_path in image_paths:
+            try:
+                result = self.analyze_image(image_path, prompt, model, **kwargs)
+                results.append(result)
+            except Exception as e:
+                logger.error(f"分析图片 {image_path} 失败: {e}")
+                results.append(f"分析失败: {str(e)}")
+        
+        return results
     
     def generate(self, 
                 prompt: str,

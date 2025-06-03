@@ -70,6 +70,11 @@ class ModelSearcher(BaseAnalyzer):
         """
         logger.info("开始模型搜索...")
         
+        # 检查additional_info中是否有top_k参数，有则覆盖默认值
+        if additional_info and "top_k" in additional_info:
+            top_k = additional_info["top_k"]
+            logger.info(f"使用业务层提供的top_k值: {top_k}")
+        
         # 1. 首先使用LLM分析需求，确定任务类型
         task_info = self._identify_task_from_requirements(requirement_analysis)
         

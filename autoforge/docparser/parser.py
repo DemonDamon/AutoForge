@@ -25,18 +25,18 @@ class MultiModalDocParser:
     
     def __init__(self, 
                  use_multimodal: bool = True,
-                 multimodal_api_key: Optional[str] = None,
+                 multimodal_client=None,
                  max_workers: int = 4):
         """
         初始化解析器
         
         Args:
             use_multimodal: 是否使用多模态模型（用于图片分析）
-            multimodal_api_key: 多模态模型API密钥
+            multimodal_client: 多模态模型客户端（如BaiLianClient实例）
             max_workers: 并行处理的最大线程数
         """
         self.use_multimodal = use_multimodal
-        self.multimodal_api_key = multimodal_api_key
+        self.multimodal_client = multimodal_client
         self.max_workers = max_workers
         
         # 初始化转换器
@@ -70,9 +70,12 @@ class MultiModalDocParser:
         try:
             self.converters.append(ImageConverter(
                 use_multimodal=self.use_multimodal,
-                multimodal_api_key=self.multimodal_api_key
+                multimodal_client=self.multimodal_client
             ))
-            logger.info("图片转换器已加载")
+            if self.use_multimodal and self.multimodal_client:
+                logger.info("图片转换器已加载（多模态模式）")
+            else:
+                logger.info("图片转换器已加载（OCR模式）")
         except ImportError as e:
             logger.warning(f"图片转换器未能加载: {e}")
         

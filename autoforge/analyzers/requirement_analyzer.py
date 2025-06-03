@@ -15,7 +15,17 @@ class RequirementAnalyzer(BaseAnalyzer):
                  save_intermediate: bool = True, prompt_manager: Optional[PromptManager] = None):
         super().__init__(llm_client, output_dir, save_intermediate)
         self.prompt_manager = prompt_manager or PromptManager()
-        self.doc_parser = MultiModalDocParser()
+        
+        # 检查LLM客户端是否支持多模态
+        multimodal_client = None
+        if llm_client and hasattr(llm_client, 'analyze_image'):
+            multimodal_client = llm_client
+            logger.info("检测到多模态LLM客户端，启用图片分析功能")
+        
+        self.doc_parser = MultiModalDocParser(
+            use_multimodal=multimodal_client is not None,
+            multimodal_client=multimodal_client
+        )
     
     def analyze(self, document_path: Optional[str] = None, 
                 document_content: Optional[str] = None,
