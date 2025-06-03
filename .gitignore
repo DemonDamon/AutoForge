@@ -69,4 +69,3 @@ test_*.txt
 .env
 .env.local
 credentials.json
-.git_access_tokens
