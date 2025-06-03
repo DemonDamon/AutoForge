@@ -29,7 +29,7 @@ AutoForge/
 │   ├── quick_start.py     # 快速入门示例
 │   ├── multi_llm_example.py  # 多LLM提供商示例
 │   ├── crawler_demo.py    # 爬虫功能示例
-│   └── mydemo.py         # 视频标题规范化示例
+│   └── search_models.py         # 视频标题规范化示例
 ├── outputs/               # 输出目录（自动创建）
 ├── requirements.txt       # 项目依赖
 ├── setup.py              # 安装配置
@@ -72,7 +72,7 @@ AutoForge提供了几个示例程序，用于快速上手：
 - **quick_start.py** - 基础入门示例
 - **multi_llm_example.py** - 展示如何使用不同的LLM提供商
 - **crawler_demo.py** - 展示HuggingFace爬虫功能
-- **mydemo.py** - 视频标题规范化实际应用示例
+- **search_models.py** - 视频标题规范化实际应用示例
 
 运行示例：
 ```bash
@@ -86,7 +86,7 @@ python examples/multi_llm_example.py
 python examples/crawler_demo.py
 
 # 视频标题清洗算法任务示例
-python examples/mydemo.py
+python examples/search_models.py
 ```
 
 ## 📚 详细使用指南
@@ -353,9 +353,9 @@ DASHSCOPE_API_KEY   # 百炼 API密钥
 
 1. **环境变量**：如上所示设置环境变量
 2. **直接提供**：在代码中直接提供API密钥和配置参数
-3. **示例代码**：参考examples/mydemo.py中的配置方式
+3. **示例代码**：参考examples/search_models.py中的配置方式
 
-示例配置（来自mydemo.py）：
+示例配置（来自search_models.py）：
 ```python
 # 模型配置映射
 MODEL_CONFIGS = {
