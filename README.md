@@ -9,6 +9,7 @@ AutoForge 是一个智能化的机器学习模型选型和优化框架，它能�
 2. **🔍 模型搜索**：基于需求自动在HuggingFace上搜索最优模型
 3. **📊 方案设计**：自动设计数据集构建方案和网格化实验方案
 4. **🎯 结果分析**：分析实验结果并给出最终选型建议
+5. **🔬 论文分析**：从Papers with Code爬取最新论文并分析相关GitHub仓库
 
 📁 项目结构
 ```
@@ -24,11 +25,15 @@ AutoForge/
 │   │   ├── bailian_client.py   # 百炼客户端
 │   │   └── base.py            # 基类
 │   ├── crawler/          # 爬虫模块
+│   │   ├── hf_crawler.py      # HuggingFace爬虫
+│   │   ├── pwc_crawler.py     # Papers with Code爬虫
+│   │   └── github_repo_analyzer.py  # GitHub仓库分析
 │   └── prompts/          # 提示词管理
 ├── examples/              # 使用示例
 │   ├── quick_start.py     # 快速入门示例
 │   ├── multi_llm_example.py  # 多LLM提供商示例
 │   ├── crawler_demo.py    # 爬虫功能示例
+│   ├── pwc_github_analysis.py  # Papers with Code和GitHub分析示例
 │   └── search_models.py         # 视频标题规范化示例
 ├── outputs/               # 输出目录（自动创建）
 ├── requirements.txt       # 项目依赖
@@ -72,6 +77,7 @@ AutoForge提供了几个示例程序，用于快速上手：
 - **quick_start.py** - 基础入门示例
 - **multi_llm_example.py** - 展示如何使用不同的LLM提供商
 - **crawler_demo.py** - 展示HuggingFace爬虫功能
+- **pwc_github_analysis.py** - 展示Papers with Code和GitHub分析示例
 - **search_models.py** - 视频标题规范化实际应用示例
 
 运行示例：
@@ -84,6 +90,9 @@ python examples/multi_llm_example.py
 
 # 爬虫功能示例
 python examples/crawler_demo.py
+
+# Papers with Code和GitHub分析示例
+python examples/pwc_github_analysis.py
 
 # 视频标题清洗算法任务示例
 python examples/search_models.py
@@ -248,7 +257,94 @@ detailed_models = crawler.crawl_models_batch(
 )
 ```
 
-### 6. 集成爬虫的模型搜索
+### 6. Papers with Code爬虫使用
+
+```python
+from autoforge.crawler import PwCCrawler
+
+# 创建爬虫实例
+crawler = PwCCrawler(
+    output_dir="outputs/papers",
+    max_workers=4,  # 并发线程数
+    delay=1.0       # 请求间隔（秒）
+)
+
+# 爬取热门论文
+papers = crawler.get_trending_papers(top_k=10)
+
+# 按领域爬取论文
+papers = crawler.get_papers_by_field("Computer Vision", top_k=5)
+
+# 搜索特定论文
+papers = crawler.search_papers("transformer", top_k=5)
+
+# 获取论文相关的GitHub仓库
+for paper in papers:
+    github_repos = crawler.extract_github_links(paper["url"])
+    print(f"论文: {paper['title']} - 相关仓库: {len(github_repos)}")
+```
+
+### 7. GitHub仓库分析使用
+
+```python
+from autoforge.crawler import GitHubRepoAnalyzer
+
+# 创建分析器实例
+analyzer = GitHubRepoAnalyzer(
+    output_dir="outputs/repos",
+    clone_dir="temp_repos"
+)
+
+# 分析单个仓库
+repo_info = analyzer.analyze_repo("https://github.com/username/repo")
+
+# 查看语言统计
+print(f"仓库主要语言: {repo_info['languages']}")
+
+# 查看依赖关系
+print(f"Python依赖: {repo_info['dependencies'].get('python', [])}")
+
+# 查看文件结构
+print(f"关键文件: {repo_info['key_files']}")
+
+# 清理克隆的仓库
+analyzer.cleanup()
+```
+
+### 8. 完整工作流程示例
+
+```python
+from autoforge.crawler import PwCCrawler, GitHubRepoAnalyzer
+
+# 第1步: 爬取Papers with Code上的论文
+pwc_crawler = PwCCrawler()
+papers = pwc_crawler.search_papers("text classification", top_k=3)
+
+# 第2步: 提取GitHub仓库链接
+github_links = []
+for paper in papers:
+    links = pwc_crawler.extract_github_links(paper["url"])
+    github_links.extend(links)
+
+# 第3步: 分析GitHub仓库
+analyzer = GitHubRepoAnalyzer()
+repo_analysis = []
+for link in github_links:
+    try:
+        repo_info = analyzer.analyze_repo(link)
+        repo_analysis.append(repo_info)
+    except Exception as e:
+        print(f"分析仓库 {link} 时出错: {e}")
+
+# 第4步: 生成分析报告
+for i, repo in enumerate(repo_analysis):
+    print(f"\n仓库 {i+1}: {repo['name']}")
+    print(f"语言: {repo['languages']}")
+    print(f"文件数: {repo['file_count']}")
+    print(f"依赖: {', '.join(repo['dependencies'].get('python', []))}")
+```
+
+### 9. 集成爬虫的模型搜索
 
 ```python
 # ModelSearcher会自动使用爬虫获取最新模型信息
@@ -301,6 +397,37 @@ parser = MultiModalDocParser(
 )
 ```
 
+### 4. 论文和代码分析流程
+
+AutoForge现在支持从学术论文到代码实现的完整分析流程：
+
+```python
+from autoforge.crawler import PwCCrawler, GitHubRepoAnalyzer
+
+# 初始化组件
+pwc_crawler = PwCCrawler()
+repo_analyzer = GitHubRepoAnalyzer()
+
+# 搜索最新论文
+papers = pwc_crawler.search_papers("large language model", top_k=5)
+
+# 分析论文相关仓库
+for paper in papers:
+    # 提取GitHub链接
+    github_links = pwc_crawler.extract_github_links(paper["url"])
+    
+    # 分析每个仓库
+    for link in github_links:
+        repo_info = repo_analyzer.analyze_repo(link)
+        
+        # 提取模型实现细节
+        if "model" in repo_info["key_files"]:
+            print(f"发现模型实现: {repo_info['key_files']['model']}")
+            
+        # 分析依赖关系
+        print(f"依赖关系: {repo_info['dependencies']}")
+```
+
 ## 📋 核心组件
 
 ### 1. 文档解析器 (DocParser)
@@ -332,6 +459,20 @@ parser = MultiModalDocParser(
 - **ModelCard提取**: 自动爬取并保存模型详细文档
 - **任务管理**: 内置HuggingFace所有任务类型配置
 - **并发爬取**: 支持多线程批量爬取
+
+### 6. Papers with Code爬虫 (PwCCrawler)
+- **热门论文爬取**: 获取Papers with Code首页热门论文
+- **领域搜索**: 按学术领域搜索相关论文
+- **关键词搜索**: 支持自定义关键词搜索论文
+- **GitHub仓库提取**: 自动提取论文页面中的GitHub仓库链接
+- **元数据提取**: 提取论文标题、作者、发布日期、摘要等信息
+
+### 7. GitHub仓库分析器 (GitHubRepoAnalyzer)
+- **仓库克隆**: 自动克隆指定的GitHub仓库
+- **语言统计**: 分析仓库的编程语言分布
+- **依赖分析**: 提取Python/JavaScript等语言的依赖信息
+- **文件结构分析**: 分析仓库的文件结构和关键文件
+- **仓库评估**: 基于多维度指标评估仓库质量
 
 ## 🔧 配置选项
 
