@@ -29,4 +29,85 @@ flake8>=4.0.0           # 代码检查
 beautifulsoup4>=4.11.0  # HTML解析
 requests>=2.28.0        # HTTP请求
 pyyaml>=6.0             # YAML文件解析
-markdown>=3.5.0         # Markdown解析 
+markdown>=3.5.0         # Markdown解析
+
+# 新增依赖
+numpy>=1.24.3
+langchain>=0.0.267
+langchain-experimental>=0.0.14
+beautifulsoup4>=4.12.2
+langchainhub>=0.1.14
+faiss-cpu>=1.7.4
+transformers>=4.33.2
+pymupdf>=1.22.5
+chromadb>=0.4.13
+pytorch_lightning>=2.0.9
+torch>=2.0.1
+tqdm>=4.66.1
+openai>=0.28.0
+tiktoken>=0.5.1
+scikit-learn>=1.3.0
+matplotlib>=3.7.3
+plotly>=5.17.0
+aiohttp>=3.8.5
+datasets>=2.14.5
+jsonlines>=4.0.0
+requests==2.31.0
+pillow>=10.0.1
+onnxruntime>=1.15.1
+onnx>=1.14.1
+Jinja2>=3.1.2
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.1
+pypdf>=3.15.1
+python-dotenv==1.0.0
+lxml>=4.9.3
+tqdm==4.66.1
+urllib3>=1.26.15,<2.0.0 # HTTP客户端，requests的依赖
+
+# 基础依赖
+requests>=2.31.0        # HTTP请求
+urllib3>=1.26.15,<2.0.0 # HTTP客户端，requests的依赖
+beautifulsoup4>=4.12.2  # HTML解析
+lxml>=4.9.3             # XML解析，beautifulsoup的解析器
+tqdm>=4.66.1            # 进度条显示
+python-dotenv>=1.0.0    # 环境变量加载
+pyyaml>=6.0             # YAML文件解析
+markdown>=3.5.0         # Markdown解析
+
+# 数据分析和科学计算
+numpy>=1.24.3
+scikit-learn>=1.3.0
+matplotlib>=3.7.3
+plotly>=5.17.0
+
+# 深度学习
+torch>=2.0.1
+transformers>=4.33.2
+pytorch_lightning>=2.0.9
+onnx>=1.14.1
+onnxruntime>=1.15.1
+
+# 向量存储和检索
+faiss-cpu>=1.7.4
+chromadb>=0.4.13
+
+# LLM和工具
+langchain>=0.0.267
+langchain-experimental>=0.0.14
+langchainhub>=0.1.14
+openai>=0.28.0
+tiktoken>=0.5.1
+
+# 文档处理
+pymupdf>=1.22.5
+pypdf>=3.15.1
+Jinja2>=3.1.2
+
+# 数据集和工具
+datasets>=2.14.5
+jsonlines>=4.0.0
+pillow>=10.0.1
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.1
+aiohttp>=3.8.5 

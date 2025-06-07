@@ -2,16 +2,18 @@
 分析器模块
 """
 
-from .requirement_analyzer import RequirementAnalyzer
 from .model_searcher import ModelSearcher
-from .dataset_designer import DatasetDesigner
-from .experiment_designer import ExperimentDesigner
+from .requirement_analyzer import RequirementAnalyzer
 from .result_analyzer import ResultAnalyzer
+from .experiment_designer import ExperimentDesigner
+from .dataset_designer import DatasetDesigner
+from .github_repo_analyzer import GitHubRepoAnalyzer
 
 __all__ = [
-    "RequirementAnalyzer",
-    "ModelSearcher",
-    "DatasetDesigner",
-    "ExperimentDesigner",
-    "ResultAnalyzer"
+    'ModelSearcher',
+    'RequirementAnalyzer',
+    'ResultAnalyzer',
+    'ExperimentDesigner',
+    'DatasetDesigner',
+    'GitHubRepoAnalyzer'
 ] 
