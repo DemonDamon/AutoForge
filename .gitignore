@@ -69,3 +69,5 @@ test_*.txt
 .env
 .env.local
 credentials.json
+
+thirdparty/
