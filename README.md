@@ -78,6 +78,7 @@ AutoForge提供了几个示例程序，用于快速上手：
 - **multi_llm_example.py** - 展示如何使用不同的LLM提供商
 - **crawler_demo.py** - 展示HuggingFace爬虫功能
 - **pwc_github_analysis.py** - 展示Papers with Code和GitHub分析示例
+- **paper_analysis_demo.py** - 完整的论文分析功能演示 🆕
 - **search_models.py** - 视频标题规范化实际应用示例
 
 运行示例：
@@ -93,6 +94,9 @@ python examples/crawler_demo.py
 
 # Papers with Code和GitHub分析示例
 python examples/pwc_github_analysis.py
+
+# 完整的论文分析功能演示
+python examples/paper_analysis_demo.py
 
 # 视频标题清洗算法任务示例
 python examples/search_models.py
@@ -397,35 +401,49 @@ parser = MultiModalDocParser(
 )
 ```
 
-### 4. 论文和代码分析流程
+### 4. 论文和代码分析流程 🆕
 
 AutoForge现在支持从学术论文到代码实现的完整分析流程：
 
 ```python
-from autoforge.crawler import PwCCrawler, GitHubRepoAnalyzer
+from autoforge.crawler import PapersWithCodeCrawler
+from autoforge.crawler.paper_downloader import PaperDownloader
+from autoforge.analyzers.paper_analyzer import PaperAnalyzer
+from autoforge.analyzers.paper_code_analyzer import PaperCodeAnalyzer
+from autoforge.llm import BaiLianClient
 
 # 初始化组件
-pwc_crawler = PwCCrawler()
-repo_analyzer = GitHubRepoAnalyzer()
+llm_client = BaiLianClient(api_key="your-api-key", model="qwen-plus")
+pwc_crawler = PapersWithCodeCrawler(output_dir="outputs/papers")
+paper_downloader = PaperDownloader(output_dir="outputs/papers")
+paper_analyzer = PaperAnalyzer(llm_client=llm_client, output_dir="outputs")
+paper_code_analyzer = PaperCodeAnalyzer(llm_client=llm_client, output_dir="outputs")
 
-# 搜索最新论文
-papers = pwc_crawler.search_papers("large language model", top_k=5)
+# 1. 搜索最新论文
+papers = pwc_crawler.search_papers("attention mechanism", top_k=3)
 
-# 分析论文相关仓库
+# 2. 下载论文PDF
 for paper in papers:
-    # 提取GitHub链接
-    github_links = pwc_crawler.extract_github_links(paper["url"])
-    
-    # 分析每个仓库
-    for link in github_links:
-        repo_info = repo_analyzer.analyze_repo(link)
+    if paper.get('arxiv_url'):
+        pdf_path = paper_downloader.download_from_arxiv(paper['arxiv_url'])
         
-        # 提取模型实现细节
-        if "model" in repo_info["key_files"]:
-            print(f"发现模型实现: {repo_info['key_files']['model']}")
-            
-        # 分析依赖关系
-        print(f"依赖关系: {repo_info['dependencies']}")
+        # 3. 分析论文内容
+        paper_analysis = paper_analyzer.analyze_paper(pdf_path)
+        
+        # 4. 分析相关代码库
+        if paper.get('github_urls'):
+            for github_url in paper['github_urls']:
+                code_analysis = paper_code_analyzer.analyze_paper_code_relation(
+                    paper_path=pdf_path,
+                    github_url=github_url
+                )
+```
+
+#### 支持的功能特性：
+- **📄 论文下载**: 支持从 ArXiv、直接PDF链接等多种来源下载
+- **🔍 内容分析**: 提取论文的方法、创新点、实验结果等关键信息  
+- **💻 代码关联**: 分析论文与GitHub代码库的一致性和实现质量
+- **📊 综合评估**: 生成包含论文和代码的综合分析报告
 ```
 
 ## 📋 核心组件
@@ -473,6 +491,11 @@ for paper in papers:
 - **依赖分析**: 提取Python/JavaScript等语言的依赖信息
 - **文件结构分析**: 分析仓库的文件结构和关键文件
 - **仓库评估**: 基于多维度指标评估仓库质量
+
+### 8. 论文分析器 (Paper Analyzers) 🆕
+- **PaperDownloader**: 从ArXiv、PDF链接等多种来源下载论文
+- **PaperAnalyzer**: 利用LLM深入分析论文内容，提取方法、创新点、实验结果
+- **PaperCodeAnalyzer**: 结合论文和代码进行综合分析，评估实现一致性
 
 ## 🔧 配置选项
 
