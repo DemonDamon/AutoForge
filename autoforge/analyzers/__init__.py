@@ -1,19 +1,24 @@
 """
 分析器模块
+包含各种分析器组件
 """
 
-from .model_searcher import ModelSearcher
+from .base import BaseAnalyzer
 from .requirement_analyzer import RequirementAnalyzer
-from .result_analyzer import ResultAnalyzer
-from .experiment_designer import ExperimentDesigner
+from .model_searcher import ModelSearcher
 from .dataset_designer import DatasetDesigner
-from .github_repo_analyzer import GitHubRepoAnalyzer
+from .experiment_designer import ExperimentDesigner
+from .result_analyzer import ResultAnalyzer
+from .paper_analyzer import PaperAnalyzer
+from .paper_code_analyzer import PaperCodeAnalyzer
 
 __all__ = [
-    'ModelSearcher',
-    'RequirementAnalyzer',
-    'ResultAnalyzer',
-    'ExperimentDesigner',
-    'DatasetDesigner',
-    'GitHubRepoAnalyzer'
+    "BaseAnalyzer",
+    "RequirementAnalyzer",
+    "ModelSearcher",
+    "DatasetDesigner",
+    "ExperimentDesigner",
+    "ResultAnalyzer",
+    "PaperAnalyzer",
+    "PaperCodeAnalyzer"
 ] 

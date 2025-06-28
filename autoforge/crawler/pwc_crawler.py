@@ -379,8 +379,19 @@ class PapersWithCodeCrawler:
         url = f"{self.base_url}/search"
         params = {'q': query, 'q_meta': '', 'q_type': ''}
         
+        # 调试信息：打印完整的请求URL
+        full_url = url + "?" + urlencode(params)
+        logger.info(f"🔍 请求URL: {full_url}")
+        logger.info(f"🔍 请求参数: {params}")
+        
         try:
             response = self._get_with_retry(url, params=params)
+            
+            # 调试信息：响应状态
+            logger.info(f"📡 响应状态码: {response.status_code}")
+            logger.info(f"📡 响应内容长度: {len(response.text)} 字符")
+            logger.info(f"📡 响应编码: {response.encoding}")
+            logger.info(f"📡 响应Content-Type: {response.headers.get('Content-Type', 'Unknown')}")
             
             # 确保正确编码
             if response.encoding == 'ISO-8859-1':
@@ -388,30 +399,108 @@ class PapersWithCodeCrawler:
             
             soup = BeautifulSoup(response.text, 'html.parser')
             
+            # 调试信息：页面结构分析
+            logger.info(f"🔍 页面标题: {soup.title.string if soup.title else 'No title'}")
+            
+            # 保存响应内容到文件以便调试
+            debug_file = self.output_dir / f"debug_search_{query.replace(' ', '_')}.html"
+            with open(debug_file, 'w', encoding='utf-8') as f:
+                f.write(response.text)
+            logger.info(f"🔍 调试页面已保存到: {debug_file}")
+            
             papers = []
             
-            # 尝试多种可能的卡片选择器
-            paper_items = (
-                soup.find_all('div', class_='row paper-card') or 
-                soup.find_all('div', class_='paper-card') or
-                soup.select('.paper-card') or
-                soup.select('.paper-card-container') or
-                soup.select('.infinite-item')
-            )
+            # 尝试多种可能的卡片选择器，并记录每种尝试的结果
+            selectors = [
+                ('div', {'class': 'row paper-card'}),
+                ('div', {'class': 'paper-card'}),
+                ('.paper-card', None),
+                ('.paper-card-container', None),
+                ('.infinite-item', None),
+                ('.paper-list-item', None),
+                ('.search-result', None),
+                ('.item', None),
+            ]
+            
+            paper_items = []
+            for selector, attrs in selectors:
+                if attrs:
+                    items = soup.find_all(selector, attrs)
+                else:
+                    items = soup.select(selector)
+                
+                logger.info(f"🔍 选择器 '{selector}' {attrs or ''}: 找到 {len(items)} 个元素")
+                
+                if items:
+                    paper_items = items
+                    logger.info(f"✅ 使用选择器: {selector} {attrs or ''}")
+                    break
+            
+            # 如果所有选择器都没找到，尝试更通用的选择器
+            if not paper_items:
+                logger.warning("🔍 尝试通用选择器...")
+                generic_selectors = ['div[class*="paper"]', 'div[class*="item"]', 'article', '.result']
+                for sel in generic_selectors:
+                    items = soup.select(sel)
+                    logger.info(f"🔍 通用选择器 '{sel}': 找到 {len(items)} 个元素")
+                    if items:
+                        paper_items = items[:10]  # 限制数量避免误匹配
+                        logger.info(f"✅ 使用通用选择器: {sel}")
+                        break
             
             logger.info(f"搜索 '{query}' 找到 {len(paper_items)} 个论文卡片")
+            
+            # 调试信息：分析找到的元素
+            if paper_items:
+                logger.info(f"🔍 第一个元素的类名: {paper_items[0].get('class', [])}")
+                logger.info(f"🔍 第一个元素的HTML片段: {str(paper_items[0])[:200]}...")
+            else:
+                # 如果没找到任何论文卡片，分析页面可能的结构
+                logger.warning("🔍 未找到论文卡片，分析页面结构...")
+                
+                # 查找所有可能包含论文信息的div
+                all_divs = soup.find_all('div')
+                logger.info(f"🔍 页面总共有 {len(all_divs)} 个div元素")
+                
+                # 查找包含"paper"关键词的类名
+                paper_classes = set()
+                for div in all_divs:
+                    classes = div.get('class', [])
+                    for cls in classes:
+                        if 'paper' in cls.lower() or 'item' in cls.lower() or 'result' in cls.lower():
+                            paper_classes.add(cls)
+                
+                if paper_classes:
+                    logger.info(f"🔍 发现可能的论文相关类名: {list(paper_classes)}")
+                else:
+                    logger.warning("🔍 未发现明显的论文相关类名")
+                
+                # 查看是否有搜索结果提示
+                no_results_indicators = [
+                    'no results', 'no papers', 'not found', '0 results', 'nothing found'
+                ]
+                page_text = soup.get_text().lower()
+                for indicator in no_results_indicators:
+                    if indicator in page_text:
+                        logger.warning(f"🔍 页面可能显示无结果: 发现文本 '{indicator}'")
+                        break
             
             # 只处理前 top_k 个结果
             paper_items = paper_items[:top_k]
             
-            for item in paper_items:
+            for i, item in enumerate(paper_items):
+                logger.info(f"🔍 解析第 {i+1} 个论文项...")
                 paper_info = self._parse_paper_item(item)
                 if paper_info:
                     papers.append(paper_info)
+                    logger.info(f"✅ 成功解析论文: {paper_info.get('title', 'Unknown')}")
+                else:
+                    logger.warning(f"❌ 解析第 {i+1} 个论文项失败")
             
             # 保存搜索结果
             self._save_paper_list(f"search_{query}", papers)
             
+            logger.info(f"🎉 搜索完成，成功解析 {len(papers)} 篇论文")
             return papers
             
         except Exception as e:
