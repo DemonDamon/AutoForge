@@ -110,4 +110,13 @@ jsonlines>=4.0.0
 pillow>=10.0.1
 fuzzywuzzy>=0.18.0
 python-Levenshtein>=0.21.1
-aiohttp>=3.8.5 
+aiohttp>=3.8.5
+
+# 新增依赖
+uvicorn
+fastapi
+python-dotenv
+loguru
+PyPDF2
+python-docx
+gradio 
