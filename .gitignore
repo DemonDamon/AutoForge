@@ -72,3 +72,4 @@ credentials.json
 
 thirdparty/
 .gradio/
+.cursor/
