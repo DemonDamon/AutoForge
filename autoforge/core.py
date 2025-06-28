@@ -269,43 +269,57 @@ class AutoForgeAgent:
                          document_content: Optional[str] = None,
                          manual_description: Optional[str] = None,
                          skip_experiment_execution: bool = True,
-                         additional_info: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+                         additional_info: Optional[Dict[str, Any]] = None):
         """
-        运行完整的分析流程
+        运行完整的自动化分析流程（生成器版本）。
         
-        Args:
-            document_path: 文档路径
-            document_content: 文档内容
-            manual_description: 手动描述
-            skip_experiment_execution: 是否跳过实验执行（仅生成方案）
-            additional_info: 额外的信息，如模型搜索配置等
-            
-        Returns:
-            完整的分析结果
+        该方法会逐步执行分析流程，并在每个阶段完成后`yield`一个结果。
+        
+        Yields:
+            一个字典，包含:
+            - "stage": 当前完成的阶段名称 (str)
+            - "result": 该阶段的分析结果 (Dict[str, Any])
         """
-        logger.info("开始运行AutoForge完整流程...")
-        
         # 1. 需求分析
-        self.analyze_requirements(document_path, document_content, manual_description)
+        req_result = self.analyze_requirements(
+            document_path=document_path,
+            document_content=document_content,
+            manual_description=manual_description
+        )
+        yield {
+            "stage": "requirement_analysis",
+            "result": req_result
+        }
         
         # 2. 模型搜索
-        self.search_models(additional_info=additional_info)
-        
-        # 3.1 数据集设计
-        self.design_dataset()
-        
-        # 3.2 实验设计
-        self.design_experiments()
-        
-        # 生成最终报告
-        final_report = self.generate_final_report(skip_experiment_execution)
-        
-        return {
-            "status": "success",
-            "workflow_state": self.workflow_state,
-            "final_report": final_report
+        model_search_result = self.search_models(additional_info=additional_info)
+        yield {
+            "stage": "model_search",
+            "result": model_search_result
         }
-    
+        
+        if not skip_experiment_execution:
+            # 3.1. 数据集设计
+            dataset_design_result = self.design_dataset()
+            yield {
+                "stage": "dataset_design",
+                "result": dataset_design_result
+            }
+            
+            # 3.2. 实验设计
+            experiment_design_result = self.design_experiments()
+            yield {
+                "stage": "experiment_design",
+                "result": experiment_design_result
+            }
+            
+            # 4. 最终分析报告（此处仅为示例，实际可能需要执行实验）
+            # final_report_result = self.generate_final_report()
+            # yield {
+            #     "stage": "final_report",
+            #     "result": {"report": final_report_result}
+            # }
+
     def generate_final_report(self, skip_experiment_execution: bool = True) -> str:
         """生成最终报告"""
         report_parts = []
